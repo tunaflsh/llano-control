@@ -6,7 +6,7 @@ CPU usa la temperatura del monitor del sistema (coretemp Package id 0 para Intel
 
 IA Baja/Media/Alta conservan rangos 300–1000 / 600–2000 / 1000–2800 RPM y curvas 30–90 °C. Personalizado usa sus puntos. Manual según temperatura hace que Manual recorra 300 RPM a 30 °C hasta el valor de RPM elegido a 90 °C. Desmarcar esa opción recupera Manual fijo, independiente de temperatura. En el editor la opción térmica está marcada por defecto para perfiles que no la guardaban; no se modifica el disco ni el hardware hasta Guardar o Aplicar, respectivamente.
 
-La gráfica, la previsualización y el control usan la misma curva y fuente. Histéresis y pasos de 100 RPM se mantienen. Las temperaturas GPU proceden de las muestras existentes, también en bandeja; no se añade ninguna consulta a NVIDIA ni se despierta una GPU suspendida. En modo combinado se usa CPU si la GPU suspendida no aporta temperatura. No se añaden consultas de carga, frecuencia ni memoria en bandeja.
+La gráfica, la previsualización y el control usan la misma curva y fuente. Histéresis y pasos de 50 RPM se mantienen. Las temperaturas GPU proceden de las muestras existentes, también en bandeja; no se añade ninguna consulta a NVIDIA ni se despierta una GPU suspendida. En modo combinado se usa CPU si la GPU suspendida no aporta temperatura. No se añaden consultas de carga, frecuencia ni memoria en bandeja.
 
 Las RPM siguen siendo consignas estimadas a partir del porcentaje USB, no lecturas de tacómetro. La selección de temperatura es lógica del PC; no se inventan nuevos comandos HID.
 

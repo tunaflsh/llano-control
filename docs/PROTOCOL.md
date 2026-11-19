@@ -38,7 +38,7 @@ El registro aporta estos puntos de observación física:
 | 50 % | 1550 RPM |
 | 60 % | 1800 RPM |
 
-Son compatibles con RPM=300+25*p en este intervalo. Hay puntos adicionales de perfiles automáticos compatibles, pero sin sincronización exacta. Esto no valida una conversión general en 300–2800 RPM. En manual físico, el estado final 01 corresponde a una observación de 300 RPM, lo que exige tratar el extremo inferior por separado. Falta probar 0/1 %, 4 %, 96 % y 100 % con lectura física antes de garantizar pasos de 100 RPM en todo el rango. No etiquetar RPM calculadas como medidas.
+Son compatibles con RPM=300+25*p en este intervalo. Hay puntos adicionales de perfiles automáticos compatibles, pero sin sincronización exacta. Esto no valida una conversión general en 300–2800 RPM. En manual físico, el estado final 01 corresponde a una observación de 300 RPM, lo que exige tratar el extremo inferior por separado. No etiquetar RPM calculadas como medidas. El 0 % se satura a 300 RPM en el dispositivo; el controlador Linux usa el apagado general para un punto de curva a 0 (ventilador, RGB y pantalla) y pasos de 50 RPM.
 
 En 55, el mando físico cambia respuestas 80→88 y reduce el porcentaje; las actualizaciones 00 del PC siguen llegando cada cinco segundos, pero no recuperan el control. En 56, los envíos 01 preceden a la vuelta 88→80 y al retorno a 40 % / 1300 RPM. El software Linux debe respetar el modo físico y recuperar el control solo por acción explícita del usuario.
 
@@ -50,4 +50,4 @@ El apagado general conserva el porcentaje en el estado: no mostrar esa consigna 
 
 El controlador Linux implementa consultas, lectura-modificación-escritura y comprobación del estado devuelto. Identifica VID/PID e interfaz, verifica el descriptor HID, valida checksum y serializa operaciones con un bloqueo. Las pruebas usan eventos capturados y transportes simulados; no envían USB real.
 
-Las asociaciones están respaldadas por capturas Windows y por las acciones/observaciones del registro. Falta confirmar físicamente los efectos de las órdenes Linux, recuperación desde manual y calibración de los extremos. Las RPM calculadas son estimaciones, no lecturas de tacómetro. Desde 0.8.2 el inicio aplica automáticamente el perfil de RPM guardado y, después, el RGB; no se reintenta continuamente una operación fallida.
+Las asociaciones están respaldadas por capturas Windows y por las acciones/observaciones del registro. Las RPM calculadas son estimaciones, no lecturas de tacómetro. Desde 0.8.2 el inicio aplica automáticamente el perfil de RPM guardado y, después, el RGB; no se reintenta continuamente una operación fallida.

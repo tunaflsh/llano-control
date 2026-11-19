@@ -4,22 +4,22 @@ Native GTK4 application for the **Llano V12 Ultra** on Linux, developed on PikaO
 
 [Español](README.es.md) · [Protocol evidence](docs/PROTOCOL.md) · [Contributing](CONTRIBUTING.md)
 
-**Version 0.8.7 — experimental hardware support.** HID messages are based on captures from MythCool on Windows. Automated tests check the captured bytes and state handling; physical Linux validation and calibration at the lowest/highest RPM targets remain incomplete. Displayed RPM targets are estimates, not tachometer readings. This is an independent project, not official Llano software.
+**Version 0.8.8 — hardware support.** HID messages are based on captures from MythCool on Windows. Automated tests check the captured bytes and state handling. Displayed RPM targets are estimates, not tachometer readings. This is an independent project, not official Llano software.
 
-**[Download v0.8.7](https://github.com/tal0nmallorca/llano-control/releases/tag/v0.8.7)** · Save settings on close and apply RPM/RGB on startup.
+**[Download v0.8.8](https://github.com/tal0nmallorca/llano-control/releases/tag/v0.8.8)** · Save settings on close and apply RPM/RGB on startup.
 
 ## AppImage (x86_64)
 
-Download `Llano-Control-0.8.7-x86_64.AppImage` from the release. Python, GTK4 and the GTK3/Ayatana tray dependencies are bundled:
+Download `Llano-Control-0.8.8-x86_64.AppImage` from the release. Python, GTK4 and the GTK3/Ayatana tray dependencies are bundled:
 
 ```sh
-chmod +x Llano-Control-0.8.7-x86_64.AppImage
-./Llano-Control-0.8.7-x86_64.AppImage
+chmod +x Llano-Control-0.8.8-x86_64.AppImage
+./Llano-Control-0.8.8-x86_64.AppImage
 ```
 
 Do not run `install.py` for the AppImage. Keep the file at a fixed location when enabling login autostart. It shares profiles with the regular installation. Quit the previous instance first: startup applies saved RPM and RGB settings.
 
-Host graphics drivers and the USB udev rule below are still required. Without FUSE, use `APPIMAGE_EXTRACT_AND_RUN=1 ./Llano-Control-0.8.7-x86_64.AppImage`. This is an experimental Linux x86_64 bundle; NVIDIA drivers are not bundled and compatibility with every distribution is not guaranteed.
+Host graphics drivers and the USB udev rule below are still required. Without FUSE, use `APPIMAGE_EXTRACT_AND_RUN=1 ./Llano-Control-0.8.8-x86_64.AppImage`. This is a Linux x86_64 bundle; NVIDIA drivers are not bundled and compatibility with every distribution is not guaranteed.
 
 ## Screenshots
 
@@ -48,9 +48,9 @@ Click either image to view it at full size.
 | AI Medium | 600–2000 |
 | AI High | 1000–2800 |
 | Manual | Fixed target, or 300 up to the selected maximum |
-| Custom | User-defined curve, 300–2800 |
+| Custom | User-defined curve, 0 (off) or 300–2800 |
 
-AI curves rise linearly from 30 to 90 °C. Targets use 100 RPM steps. The observed middle-range calibration is 40% → 1300 RPM, 50% → 1550 RPM and 60% → 1800 RPM. The remaining range is an experimental extrapolation.
+AI curves rise linearly from 30 to 90 °C. Targets use 50 RPM steps. The observed middle-range calibration is 40% → 1300 RPM, 50% → 1550 RPM and 60% → 1800 RPM. The remaining range is an extrapolation. A Custom curve point of 0 powers the whole cooler off (fan, RGB and display); automatic control stays active and powers it back on when the curve rises above 0.
 
 ## Install on PikaOS / Debian / Ubuntu
 
@@ -111,9 +111,9 @@ python3 -m compileall -q llano_control
 ./llano-control telemetry
 ```
 
-The test suite currently contains **141 tests** and does not issue real USB commands. Minimal HID event fixtures are included; raw captures, machine logs and bottle backups are not.
+The test suite currently contains **150 tests** and does not issue real USB commands. Minimal HID event fixtures are included; raw captures, machine logs and bottle backups are not.
 
-`tools/capture-mythcool.py` and `tools/analyze-mythcool.py` use `tshark`/`dumpcap` and Linux usbmon for device-filtered captures. See [capture notes](docs/CAPTURE.md). The optional Soda/Bottles helper requires PyYAML and backs up a bottle before changing its runner; it is an experimental diagnostic, not an application dependency.
+`tools/capture-mythcool.py` and `tools/analyze-mythcool.py` use `tshark`/`dumpcap` and Linux usbmon for device-filtered captures. See [capture notes](docs/CAPTURE.md). The optional Soda/Bottles helper requires PyYAML and backs up a bottle before changing its runner; it is an optional diagnostic, not an application dependency.
 
 ## License
 

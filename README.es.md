@@ -4,22 +4,22 @@ Aplicación nativa GTK4 para el **Llano V12 Ultra** en Linux, desarrollada en Pi
 
 [English](README.md) · [Protocolo](docs/PROTOCOL.md) · [Fuentes de temperatura](docs/TEMPERATURAS.md)
 
-**Versión 0.8.7 — soporte de hardware experimental.** Las órdenes HID proceden de capturas de MythCool en Windows. Las pruebas automáticas verifican los bytes y el manejo de estados; faltan validación física completa en Linux y calibración de los extremos de RPM. Las RPM mostradas son objetivos estimados, no lecturas de tacómetro. Proyecto independiente, sin afiliación oficial con Llano.
+**Versión 0.8.8 — soporte de hardware.** Las órdenes HID proceden de capturas de MythCool en Windows. Las pruebas automáticas verifican los bytes y el manejo de estados. Las RPM mostradas son objetivos estimados, no lecturas de tacómetro. Proyecto independiente, sin afiliación oficial con Llano.
 
-**[Descargar v0.8.7](https://github.com/tal0nmallorca/llano-control/releases/tag/v0.8.7)** · Guardado automático al cerrar y aplicación de RPM/RGB al iniciar.
+**[Descargar v0.8.8](https://github.com/tal0nmallorca/llano-control/releases/tag/v0.8.8)** · Guardado automático al cerrar y aplicación de RPM/RGB al iniciar.
 
 ## AppImage (x86_64)
 
-Descarga `Llano-Control-0.8.7-x86_64.AppImage` de la release. Incluye Python, GTK4 y GTK3/Ayatana para la bandeja:
+Descarga `Llano-Control-0.8.8-x86_64.AppImage` de la release. Incluye Python, GTK4 y GTK3/Ayatana para la bandeja:
 
 ```sh
-chmod +x Llano-Control-0.8.7-x86_64.AppImage
-./Llano-Control-0.8.7-x86_64.AppImage
+chmod +x Llano-Control-0.8.8-x86_64.AppImage
+./Llano-Control-0.8.8-x86_64.AppImage
 ```
 
 No ejecutes `install.py` para el AppImage. Conserva el archivo en una ruta fija si activas el inicio de sesión automático. Comparte los perfiles con la instalación normal. Cierra la instancia anterior antes de abrirlo: al arrancar aplica las RPM y el RGB guardados.
 
-Necesita el controlador gráfico del sistema y acceso USB mediante la regla udev descrita abajo. Si FUSE no está disponible, usa `APPIMAGE_EXTRACT_AND_RUN=1 ./Llano-Control-0.8.7-x86_64.AppImage`. El paquete es experimental, para Linux x86_64; no incluye controladores NVIDIA ni garantiza compatibilidad con todas las distribuciones.
+Necesita el controlador gráfico del sistema y acceso USB mediante la regla udev descrita abajo. Si FUSE no está disponible, usa `APPIMAGE_EXTRACT_AND_RUN=1 ./Llano-Control-0.8.8-x86_64.AppImage`. El paquete es para Linux x86_64; no incluye controladores NVIDIA ni garantiza compatibilidad con todas las distribuciones.
 
 ## Capturas de la aplicación
 
@@ -47,9 +47,9 @@ Pulsa una imagen para verla a tamaño completo.
 | IA media | 600–2000 RPM |
 | IA alta | 1000–2800 RPM |
 | Manual | Fijo o de 300 hasta el máximo elegido |
-| Personalizado | Curva editable entre 300 y 2800 RPM |
+| Personalizado | Curva editable: 0 (apagado) o 300–2800 RPM |
 
-Las curvas IA suben entre 30 y 90 °C, en pasos de 100 RPM. La calibración observada es 40% → 1300 RPM, 50% → 1550 RPM y 60% → 1800 RPM. El resto del rango es una extrapolación experimental.
+Las curvas IA suben entre 30 y 90 °C, en pasos de 50 RPM. La calibración observada es 40% → 1300 RPM, 50% → 1550 RPM y 60% → 1800 RPM. El resto del rango es una extrapolación. Un punto de 0 RPM en una curva personalizada apaga el enfriador completo (ventilador, RGB y pantalla); el control sigue activo y lo enciende de nuevo cuando la curva sube por encima de 0.
 
 ## Instalación
 
@@ -99,7 +99,7 @@ sudo apt install python3-yaml
 python3 -m unittest discover -s tests -v
 ```
 
-Hay 141 pruebas sin escrituras USB reales. Se incluyen datos HID mínimos para comparar mensajes; se excluyen capturas completas, registros del equipo y copias de Bottles. Las herramientas opcionales de captura requieren tshark/dumpcap; la prueba experimental de Soda requiere PyYAML. [Capturas](docs/CAPTURE.md) · [Contribuir](CONTRIBUTING.md).
+Hay 150 pruebas sin escrituras USB reales. Se incluyen datos HID mínimos para comparar mensajes; se excluyen capturas completas, registros del equipo y copias de Bottles. Las herramientas opcionales de captura requieren tshark/dumpcap; la prueba opcional de Soda requiere PyYAML. [Capturas](docs/CAPTURE.md) · [Contribuir](CONTRIBUTING.md).
 
 Código bajo licencia [MIT](LICENSE). La imagen del producto y las marcas quedan excluidas de esa licencia: [NOTICE](NOTICE.md).
 

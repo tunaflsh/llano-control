@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.8
+
+- Polish English translations across validation, CLI and protocol errors.
+- Fix login autostart to use the installed launcher.
+- Power off the whole cooler for a Custom 0 RPM curve point while automatic control stays active.
+- Use 50 RPM steps for manual targets and fan curves.
+- Extend the test suite to 150 tests.
+
 ## 0.8.7
 
 - Power off the cooler on system power-off only, preserving saved profiles.
@@ -42,5 +50,5 @@
 - Keep background fan-control cycles from flashing Apply buttons or status text.
 - Queue explicit actions while a background USB operation finishes.
 - Include CPU, selected GPU and combined temperature control for fan profiles.
-- Include capture-backed RGB, device power and fan controls; RPM calibration remains experimental.
+- Include capture-backed RGB, device power and fan controls.
 - Provide live Spanish/English switching, tray startup and reduced background telemetry work.
