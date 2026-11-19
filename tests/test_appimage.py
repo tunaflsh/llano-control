@@ -22,5 +22,15 @@ class AppImageTests(unittest.TestCase):
             target=Path(tmp)/'autostart.desktop'
             app=SimpleNamespace(auto_path=lambda:target,auto=Mock(),message=Mock())
             app.auto.get_active.return_value=True
-            with patch.dict(os.environ,{'APPIMAGE':''}):App.autostart(app)
+            with patch.dict(os.environ,{'APPIMAGE':''}), patch('llano_control.gui.shutil.which', return_value=None):
+                App.autostart(app)
             self.assertIn('/llano-control" gui',target.read_text())
+
+    def test_packaged_autostart_uses_path_launcher(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target=Path(tmp)/'autostart.desktop'
+            app=SimpleNamespace(auto_path=lambda:target,auto=Mock(),message=Mock())
+            app.auto.get_active.return_value=True
+            with patch.dict(os.environ,{'APPIMAGE':''}), patch('llano_control.gui.shutil.which', return_value='/usr/bin/llano-control'):
+                App.autostart(app)
+            self.assertIn('Exec="/usr/bin/llano-control" gui',target.read_text())
