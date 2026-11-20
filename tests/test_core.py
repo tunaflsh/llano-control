@@ -53,9 +53,9 @@ if __name__=='__main__': unittest.main()
 class RPMStepTests(unittest.TestCase):
     def test_steps_and_legacy_values(self):
         from llano_control.core import rpm_step
-        for value in range(300,2801,100): self.assertEqual(rpm_step(value),value)
-        self.assertEqual(rpm_step(1250),1300)
-        self.assertEqual(rpm_step(1249),1200)
+        for value in range(300,2801,50): self.assertEqual(rpm_step(value),value)
+        self.assertEqual(rpm_step(1225),1250)
+        self.assertEqual(rpm_step(1224),1200)
         for value in (299,2801):
             with self.assertRaises(ValueError): rpm_step(value)
 
@@ -70,7 +70,7 @@ class AIModeTests(unittest.TestCase):
             self.assertEqual((effective_curve(p)[0][1],effective_curve(p)[-1][1]),limits)
             for temp in range(111):
                 rpm=preview.calculate(p,temp)
-                self.assertTrue(limits[0]<=rpm<=limits[1]); self.assertEqual(rpm%100,0)
+                self.assertTrue(limits[0]<=rpm<=limits[1]); self.assertEqual(rpm%50,0)
     def test_switch_mode_does_not_reuse_out_of_range_hysteresis(self):
         p=copy.deepcopy(DEFAULT['profiles']['Equilibrado']); p['mode']='High'
         v=Preview(); self.assertEqual(v.calculate(p,90),2800)

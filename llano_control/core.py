@@ -89,7 +89,7 @@ def interpolate(curve, temp):
 
 def rpm_step(value):
     number(value, 300, 2800)
-    return min(2800, max(300, int((value + 50) // 100) * 100))
+    return min(2800, max(300, int((value + 25) // 50) * 50))
 
 class Preview:
     def __init__(self): self.last_temp = None; self.last_rpm = None; self.last_settings = None
