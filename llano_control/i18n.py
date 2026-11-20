@@ -15,6 +15,7 @@ EN = {'No se pudieron guardar los ajustes: ': 'Could not save settings: ','Minim
  'Objetivo manual · RPM': 'Manual target · RPM',
  'Solicitar encendido al aplicar': 'Request power on when applying',
  'Histéresis · °C': 'Hysteresis · °C',
+ 'Tiempo mínimo apagado (s)': 'Minimum off time (s)',
  'AI: presets locales aproximados. Control físico pendiente.': 'AI: approximate local presets. Hardware '
                                                                'control pending.',
  'Speed Settings · curva y sensor CPU': 'Speed settings · curve and CPU sensor',
@@ -83,7 +84,7 @@ EN = {'No se pudieron guardar los ajustes: ': 'Could not save settings: ','Minim
                                                                                         'off requested or '
                                                                                         'sensor unavailable. '
                                                                                         'No USB action.',
- 'Curva local: 0–110 °C / 300–2800 RPM': 'Local curve: 0–110 °C / 300–2800 RPM',
+ 'Curva local: 0–110 °C / 0–2800 RPM': 'Local curve: 0–110 °C / 0–2800 RPM',
  'USB conectado · identidad candidata': 'USB connected · candidate identity',
  'USB desconectado / no visible': 'USB disconnected / not visible',
  'Diagnóstico local: ': 'Local diagnostics: ',
@@ -222,6 +223,8 @@ EN.update({
     'No es dispositivo de caracteres': 'Not a character device',
     'La identidad cambió durante la apertura': 'Identity changed during open',
     'Duración permitida: 1–300 segundos': 'Allowed duration: 1–300 seconds',
+    'Un punto de 0 RPM apaga el enfriador completo (ventilador, RGB y pantalla).': 'A 0 RPM point powers the whole cooler off (fan, RGB and display).',
+    'Curva a 0 RPM: enfriador apagado.': 'Curve at 0 RPM: cooler powered off.',
 })
 EN.update({
     'Porcentaje fuera de rango / Percentage out of range': 'Percentage out of range',

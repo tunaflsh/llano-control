@@ -10,14 +10,16 @@ def rpm_to_percent(rpm):
 
     1% at 300 RPM was observed in physical manual mode. Remaining targets
     extrapolate the measured middle range and require physical validation.
+    0 is handled as a whole-device power-off by the controller.
     """
-    number(rpm,300,2800)
+    number(rpm,0,2800)
+    if rpm == 0: return 0
     return max(1, min(100, round((rpm-300)/25)))
 
 
 def fan_report(state, percent, take_control=False, power=None):
     checked_state(state)
-    if type(percent) is not int or not 1 <= percent <= 100:
+    if type(percent) is not int or not 0 <= percent <= 100:
         raise ValueError('Porcentaje fuera de rango / Percentage out of range')
     if type(take_control) is not bool or (power is not None and type(power) is not bool):
         raise ValueError('Estado de control inválido / Invalid control state')
@@ -74,12 +76,27 @@ def apply_power(enabled, transport=HidFeature, *, toggle=False):
         return {'power':not bool(after[2]),'changed':changed}
 
 
+def apply_curve_off(transport=HidFeature):
+    with transport() as device:
+        before=device.state()
+        if before[0]&8: return {'paused':True,'reason':'manual'}
+        if before[2]: return {'power':False,'changed':False,'curve_off':True}
+        report=power_report(before,False)
+        device.send(report);time.sleep(.05);after=device.state()
+        if after[2]!=1:
+            raise OSError('Encendido no confirmado / Power state not confirmed')
+        if after[:2]!=before[:2] or after[3:7]!=before[3:7]:
+            raise OSError('Cambió otro ajuste durante la operación / Another setting changed during operation')
+        return {'power':False,'changed':True,'curve_off':True}
+
+
 class FanController:
     """Applied profile snapshot; UI edits have no effect until Apply is pressed."""
     def __init__(self,profile):
         import copy
         self.profile=copy.deepcopy(profile);self.preview=Preview()
-        self.next_due=0.;self.initial=True;self.active=True
+        self.next_due=0.;self.initial=True;self.active=True;self.curve_off=False
+        self.wake_since=None
 
     def plan(self,temp,now):
         if not self.active or now<self.next_due:return None
@@ -89,14 +106,25 @@ class FanController:
                 raise ValueError('Sin temperatura seleccionada: control pausado; se conserva la última consigna. / No selected temperature: control paused; last target retained.')
             rpm=self.preview.calculate(self.profile,temp)
         else: rpm=self.profile['rpm']
-        job={'percent':rpm_to_percent(rpm),'take_control':self.initial}
-        if self.initial:job['power']=self.profile['power']
+        if rpm == 0 and self.profile['power']:
+            self.wake_since=None
+            job={'operation':'curve_off'}
+        elif self.curve_off and self.wake_since is None:
+            self.wake_since=now
+            job={'operation':'curve_off'}
+        elif self.curve_off and now-self.wake_since < float(self.profile.get('hold',10)):
+            job={'operation':'curve_off'}
+        else:
+            self.wake_since=None
+            job={'percent':rpm_to_percent(rpm),'take_control':self.initial or self.curve_off}
+            if job['take_control']: job['power']=self.profile['power']
         self.next_due=now+5
         return job
 
     def completed(self,result):
         self.initial=False
-        if result.get('paused') or not result.get('power',True):self.active=False
+        self.curve_off=bool(result.get('curve_off'))
+        if result.get('paused') or not result.get('power',True) and not result.get('curve_off'):self.active=False
 
 
 def main():
@@ -110,6 +138,7 @@ def main():
             settings=json.loads(sys.argv[1])
             if settings.get('operation')=='read_power':
                 with HidFeature() as device:result={'power':not bool(device.state()[2])}
+            elif settings.get('operation')=='curve_off':result=apply_curve_off()
             elif settings.get('operation')=='toggle_power':result=apply_power(None,toggle=True)
             elif settings.get('operation')=='power':result=apply_power(settings['enabled'])
             else:result=apply_fan(settings)

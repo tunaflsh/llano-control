@@ -27,9 +27,19 @@ class Tests(unittest.TestCase):
         self.assertNotEqual(v.calculate(p,54),first)
         self.assertIsNone(v.calculate(p,None)); self.assertIsNone(v.last_rpm)
     def test_invalid_curves(self):
-        for curve in ([[40,600],[40,1000]], [[float('nan'),600],[70,1000]], [[30,0],[70,1000]]):
+        for curve in ([[40,600],[40,1000]], [[float('nan'),600],[70,1000]],
+                      [[30,-1],[70,1000]], [[30,1],[70,1000]], [[30,2801],[70,1000]]):
             d=copy.deepcopy(DEFAULT); d['profiles']['Equilibrado']['curve']=curve
             with self.assertRaises(ValueError): validate(d)
+    def test_zero_curve_point_stops_the_fan(self):
+        p=copy.deepcopy(DEFAULT['profiles']['Equilibrado']); p['mode']='Custom'
+        p['curve']=[[20,0],[40,0],[60,1000],[90,2800]]
+        d=copy.deepcopy(DEFAULT); d['profiles']['Equilibrado']=p
+        validate(d)
+        v=Preview()
+        self.assertEqual(v.calculate(p,30),0)
+        self.assertEqual(v.calculate(p,40),0)
+        self.assertGreater(v.calculate(p,50),0)
     def test_backend_never_writes(self):
         with patch('os.open',side_effect=AssertionError('opened hardware')):
             with self.assertRaises(UnsupportedProtocol): HardwareBackend().apply(DEFAULT)
@@ -58,6 +68,17 @@ class RPMStepTests(unittest.TestCase):
         self.assertEqual(rpm_step(1224),1200)
         for value in (299,2801):
             with self.assertRaises(ValueError): rpm_step(value)
+
+    def test_allow_zero_for_curve_targets(self):
+        from llano_control.core import rpm_step
+        self.assertEqual(rpm_step(0, allow_zero=True),0)
+        for value in (1,50,299,300): self.assertEqual(rpm_step(value, allow_zero=True),300)
+        self.assertEqual(rpm_step(1225, allow_zero=True),1250)
+        self.assertEqual(rpm_step(1224, allow_zero=True),1200)
+        self.assertEqual(rpm_step(2800, allow_zero=True),2800)
+        with self.assertRaises(ValueError): rpm_step(0)
+        for value in (-1,2801):
+            with self.assertRaises(ValueError): rpm_step(value, allow_zero=True)
 
 class AIModeTests(unittest.TestCase):
     def test_requested_ranges_and_steps(self):

@@ -1,6 +1,6 @@
-import copy,math,tempfile,unittest
+import copy,json,math,tempfile,unittest
 from pathlib import Path
-from llano_control.core import DEFAULT,Preview,validate,effective_curve
+from llano_control.core import DEFAULT,Preview,load,validate,effective_curve
 from llano_control.fan import FanController
 from llano_control.thermal import control_temperature
 
@@ -45,8 +45,16 @@ class ThermalTests(unittest.TestCase):
     def test_profile_validation_and_legacy_default(self):
         data=copy.deepcopy(DEFAULT);validate(data)
         p=data['profiles'][data['active']];p.update(temperature_source='both',control_gpu='GPU-uuid',manual_thermal=True);validate(data)
-        p['temperature_source']='unknown'
+        p['hold']=0
         with self.assertRaises(ValueError):validate(data)
+        p['hold']=121
+        with self.assertRaises(ValueError):validate(data)
+        p['hold']=10;p['temperature_source']='unknown'
+        with self.assertRaises(ValueError):validate(data)
+        with tempfile.TemporaryDirectory() as folder:
+            old=copy.deepcopy(DEFAULT); old['profiles'][old['active']].pop('hold')
+            path=Path(folder)/'profiles.json'; path.write_text(json.dumps(old))
+            self.assertEqual(load(path)['profiles'][old['active']]['hold'],10)
 
     def test_renumbered_hwmon_drives_changing_targets(self):
         with tempfile.TemporaryDirectory() as d:

@@ -1,7 +1,7 @@
 import copy,csv,unittest
 from pathlib import Path
 from unittest.mock import patch
-from llano_control.fan import FanController,fan_report,apply_fan,rpm_to_percent
+from llano_control.fan import FanController,fan_report,apply_fan,apply_curve_off,rpm_to_percent
 from llano_control.core import DEFAULT
 
 
@@ -13,6 +13,7 @@ class FanTests(unittest.TestCase):
         p=copy.deepcopy(DEFAULT['profiles']['Equilibrado']);p['mode']=mode;return p
     def test_observed_calibration_and_requested_steps(self):
         self.assertEqual([rpm_to_percent(x) for x in (1300,1550,1800)],[40,50,60])
+        self.assertEqual(rpm_to_percent(0),0)
         targets=[rpm_to_percent(x) for x in range(300,2801,100)]
         self.assertEqual(targets[0],1);self.assertEqual(targets[-1],100)
         self.assertEqual(targets,sorted(set(targets)))
@@ -76,3 +77,64 @@ class FanTests(unittest.TestCase):
             def state(self):return state()
             def send(self,_):pass
         with patch('llano_control.fan.time.sleep'),self.assertRaises(OSError):apply_fan({'percent':60},Device)
+
+    def test_zero_percent_is_accepted_at_protocol_layer(self):
+        before=state(percent=8,power=0)
+        report=fan_report(before,0,take_control=True,power=True)
+        self.assertEqual(report[1],0); self.assertEqual(report[2],0)
+        self.assertEqual(sum(report)&255,255)
+        class Device:
+            def __init__(self):self.value=before;self.sent=[]
+            def __enter__(self):return self
+            def __exit__(self,*_):pass
+            def state(self):return self.value
+            def send(self,report):
+                self.sent.append(report);self.value=state(percent=report[1],power=report[2])
+        d=Device()
+        with patch('llano_control.fan.time.sleep'):
+            result=apply_fan({'percent':0,'take_control':True,'power':True},lambda:d)
+        self.assertEqual(result['percent'],0)
+        self.assertTrue(result['changed'])
+        self.assertEqual(len(d.sent),1)
+
+    def test_custom_curve_powers_off_and_back_on(self):
+        p=self.profile('Custom');p['curve']=[[20,0],[40,0],[60,1000],[90,2800]]
+        p['hold']=10
+        c=FanController(p)
+        self.assertEqual(c.plan(30,0),{'operation':'curve_off'})
+        c.completed({'curve_off':True,'power':False})
+        for now in (5,10):
+            self.assertEqual(c.plan(50,now),{'operation':'curve_off'})
+        job=c.plan(50,15)
+        self.assertTrue(job['take_control']); self.assertTrue(job['power'])
+        self.assertGreater(job['percent'],0)
+
+        c=FanController(p)
+        self.assertEqual(c.plan(30,0),{'operation':'curve_off'})
+        c.completed({'curve_off':True,'power':False})
+        self.assertEqual(c.plan(50,5),{'operation':'curve_off'})
+        self.assertEqual(c.plan(20,10),{'operation':'curve_off'})
+        self.assertEqual(c.plan(50,15),{'operation':'curve_off'})
+        self.assertEqual(c.plan(50,20),{'operation':'curve_off'})
+        job=c.plan(50,25)
+        self.assertTrue(job['take_control']); self.assertGreater(job['percent'],0)
+
+    def test_curve_off_powers_off_and_respects_manual(self):
+        class Device:
+            def __init__(self,first=0x80,power=0):
+                self.value=state(first=first,percent=1,power=power);self.sent=[]
+            def __enter__(self):return self
+            def __exit__(self,*_):pass
+            def state(self):return self.value
+            def send(self,report):
+                self.sent.append(report);self.value=state(percent=report[1],power=report[2])
+        d=Device()
+        with patch('llano_control.fan.time.sleep'):
+            result=apply_curve_off(lambda:d)
+        self.assertTrue(result['curve_off']); self.assertEqual(d.value[2],1)
+        self.assertEqual(len(d.sent),1)
+        manual=Device(0x88,0)
+        with patch('llano_control.fan.time.sleep'):
+            result=apply_curve_off(lambda:manual)
+        self.assertTrue(result['paused']); self.assertEqual(manual.value[2],0)
+        self.assertEqual(manual.sent,[])

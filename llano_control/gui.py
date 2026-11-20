@@ -151,6 +151,7 @@ class App(Gtk.Application):
         self.row(rpm,'Objetivo manual · RPM',self.fields['rpm'])
         self.fields['power']=Gtk.CheckButton(); self.row(rpm,'Solicitar encendido al aplicar',self.fields['power'])
         self.fields['hysteresis']=Gtk.SpinButton.new_with_range(0,10,1); self.row(rpm,'Histéresis · °C',self.fields['hysteresis'])
+        self.fields['hold']=Gtk.SpinButton.new_with_range(5,120,5); self.row(rpm,'Tiempo mínimo apagado (s)',self.fields['hold'])
         rpm.append(self.label('Aplicar modo activa el control. Rangos RPM estimados; calibración pendiente en los extremos.','muted'))
         curvebox=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=8)
         exp=ui_i18n.button(Gtk.Expander,label=tr('Speed Settings · curva y sensor CPU')); exp.set_child(curvebox); rpm.append(exp)
@@ -158,6 +159,7 @@ class App(Gtk.Application):
         self.curve=Gtk.Entry(); self.curve.set_placeholder_text('30:600, 50:1000, 70:1800, 90:2800'); curvebox.append(self.curve)
         self.graph=Gtk.DrawingArea(); self.graph.set_content_height(160); self.graph.set_draw_func(self.draw); curvebox.append(self.graph)
         self.curve.connect('changed',lambda *_: self.graph.queue_draw())
+        curvebox.append(self.label('Un punto de 0 RPM apaga el enfriador completo (ventilador, RGB y pantalla).','muted'))
         rgb=self.panel(right,'RGB Lighting Control')
         self.fields['rgb']=Gtk.CheckButton(); self.row(rgb,'Iluminación',self.fields['rgb'])
         self.fields['effect']=self.combo(EFFECTS); self.row(rgb,'Mode',self.fields['effect'])
@@ -300,7 +302,7 @@ class App(Gtk.Application):
         except ValueError as error:
             self.fan_status.set_text(tr(str(error)));return
         if job is None:return
-        self.fan_busy=True;self.fan_explicit=job['take_control']
+        self.fan_busy=True;self.fan_explicit=job.get('take_control',False)
         if self.fan_explicit:
             self.update_hardware_buttons()
             self.fan_status.set_text(tr('Aplicando consigna del ventilador…'))
@@ -332,7 +334,9 @@ class App(Gtk.Application):
             self.fan_status.set_text(tr('Control pausado: ')+str(error));return False
         controller.completed(result)
         if 'power' in result:self.update_power_indicator(result['power'])
-        if result.get('paused'):
+        if result.get('curve_off'):
+            self.fan_status.set_text(tr('Curva a 0 RPM: enfriador apagado.'))
+        elif result.get('paused'):
             self.fan_status.set_text(tr('Control pausado: mando físico o dispositivo apagado.'))
         elif not result['power']:
             self.fan_status.set_text(tr('Dispositivo apagado; control automático detenido.'))
@@ -660,7 +664,7 @@ class App(Gtk.Application):
         p['sensor']=self.sensor.get_active_id() or ''
         p['curve']=[list(map(float,part.strip().split(':'))) for part in self.curve.get_text().split(',')]
         p['rpm']=rpm_step(p['rpm'])
-        p['curve']=[[t,rpm_step(r)] for t,r in p['curve']]
+        p['curve']=[[t,rpm_step(r, allow_zero=True)] for t,r in p['curve']]
         name=self.name.get_text().strip()
         validate({'version':1,'active':name,'profiles':{name:p}})
         return name,p
@@ -713,9 +717,9 @@ class App(Gtk.Application):
         except (ValueError,KeyError,TypeError,AttributeError): return
         cr.set_source_rgb(.15,.16,.20); cr.paint(); cr.set_source_rgb(.65,.4,1); cr.set_line_width(2)
         for i,(t,r) in enumerate(effective_curve(p)):
-            x=20+t/110*(width-40); y=height-20-(r-300)/2500*(height-40)
+            x=20+t/110*(width-40); y=height-20-r/2800*(height-40)
             (cr.move_to if i==0 else cr.line_to)(x,y)
-        cr.stroke(); cr.set_source_rgb(.9,.9,.9); cr.move_to(20,15); cr.show_text(tr('Curva local: 0–110 °C / 300–2800 RPM'))
+        cr.stroke(); cr.set_source_rgb(.9,.9,.9); cr.move_to(20,15); cr.show_text(tr('Curva local: 0–110 °C / 0–2800 RPM'))
 
     def refresh(self):
         self.last_usb_scan=time.monotonic()

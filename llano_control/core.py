@@ -19,18 +19,21 @@ def effective_curve(profile):
     return AI_CURVES.get(profile['mode'], profile['curve'])
 
 EFFECTS = ("Solid Color", "Breathing Effect", "Color Gradient", "Color Chase")
-DEFAULT = {"version": 1, "active": "Equilibrado", "profiles": {"Equilibrado": {
+DEFAULT_VALUES = {
     "mode": "Manual", "rpm": 1200, "power": True, "rgb": True,
     "effect": "Solid Color", "color": "#aa55ff", "brightness": 50,
-    "animation_speed": 50, "sensor": "", "hysteresis": 3,
-    "curve": [[30, 600], [50, 1000], [70, 1800], [90, 2800]]}}}
+    "animation_speed": 50, "sensor": "", "hysteresis": 3, "hold": 10,
+    "curve": [[30, 600], [50, 1000], [70, 1800], [90, 2800]]}
+DEFAULT = {"version": 1, "active": "Equilibrado", "profiles": {"Equilibrado": copy.deepcopy(DEFAULT_VALUES)}}
 
 def config_path():
     return Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home()/".config"))) / "llano-control/profiles.json"
 
-def number(x, low, high):
-    if isinstance(x, bool) or not isinstance(x, (float, int)) or not math.isfinite(x) or not low <= x <= high:
-        raise ValueError(f"Valor fuera de rango {low}–{high}: {x}")
+def number(x, low, high, allow_zero=False):
+    if (isinstance(x, bool) or not isinstance(x, (float, int)) or not math.isfinite(x)
+            or not (low <= x <= high or (allow_zero and x == 0))):
+        allowed = f"0, {low}–{high}" if allow_zero else f"{low}–{high}"
+        raise ValueError(f"Valor fuera de rango {allowed}: {x}")
 
 def validate(data):
     import re
@@ -56,18 +59,28 @@ def validate(data):
         number(p["brightness"], 0, 255 if p.get("rgb_units") == "native" else 100)
         number(p["animation_speed"], 0, 3 if p.get("rgb_units") == "native" else 100)
         number(p["hysteresis"], 0, 10)
+        number(p["hold"], 1, 120)
         curve = p["curve"]
         if not isinstance(curve, list) or not 2 <= len(curve) <= 32: raise ValueError("Curva: 2–32 puntos")
         last = -1
         for t, rpm in curve:
-            number(t, 0, 110); number(rpm, 300, 2800)
+            number(t, 0, 110)
+            number(rpm, 300, 2800, allow_zero=True)
             if t <= last: raise ValueError("Temperaturas deben ser crecientes y únicas")
             last = t
     return data
 
 def load(path=None):
     path = path or config_path()
-    return validate(json.loads(path.read_text())) if path.exists() else copy.deepcopy(DEFAULT)
+    if not path.exists(): return copy.deepcopy(DEFAULT)
+    data=json.loads(path.read_text())
+    profiles=data.get("profiles") if isinstance(data,dict) else None
+    if isinstance(profiles,dict):
+        for profile in profiles.values():
+            if isinstance(profile,dict):
+                for key,value in DEFAULT_VALUES.items():
+                    if key not in profile: profile[key]=copy.deepcopy(value)
+    return validate(data)
 
 def save(data, path=None):
     validate(data)
@@ -87,8 +100,9 @@ def interpolate(curve, temp):
         if temp <= t1: return round(r0 + (r1-r0)*(temp-t0)/(t1-t0))
     return curve[-1][1]
 
-def rpm_step(value):
-    number(value, 300, 2800)
+def rpm_step(value, allow_zero=False):
+    number(value, 0 if allow_zero else 300, 2800)
+    if allow_zero and value == 0: return 0
     return min(2800, max(300, int((value + 25) // 50) * 50))
 
 class Preview:
@@ -104,6 +118,6 @@ class Preview:
             return None
         if self.last_temp is not None and abs(temp-self.last_temp) < profile["hysteresis"]:
             return self.last_rpm
-        result = rpm_step(interpolate(effective_curve(profile), temp))
+        result = rpm_step(interpolate(effective_curve(profile), temp), allow_zero=True)
         self.last_temp, self.last_rpm = temp, result
         return result
